@@ -124,6 +124,7 @@ module.exports = class AirPurifier extends Device {
 
     setAuto(value, rotationSpeed, callback) {
         this.log('Setting control mode to %s on air purifier \'%s\'', value ? 'AUTO' : 'MANUAL', this.name);
+        this.log('rotspeed',rotationSpeed);
         this.fanMode = value;
         if (value == 1) {
             this.fanMode = value;
@@ -196,6 +197,7 @@ module.exports = class AirPurifier extends Device {
     updateAuto() {
         var purifier = this.device.airPurifierList[0];
         var targetAirPurifierState = this.airPurifier.getCharacteristic(this.Characteristic.TargetAirPurifierState);
+        this.log('fanmode',purifier.fanMode);
         if (purifier.fanMode != 0) {
             if (purifier.fanMode == 1) {
                 this.targetAirPurifierState = 1;
