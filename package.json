@@ -2,7 +2,7 @@
 	"private": true,
 	"name": "homebridge-ikea-tradfri-gateway",
 	"displayName": "IKEA Trådfri Gateway (STYC fork)",
-	"version": "1.3.0 Beta1",
+	"version": "1.2.34",
 	"description": "homebridge-ikea-tradfri-gateway",
 	"main": "index.js",
 	"scripts": {
