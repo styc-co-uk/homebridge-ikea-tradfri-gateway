@@ -127,11 +127,29 @@ module.exports = class AirPurifier extends Device {
         this.fanMode = value;
         if (value == 1) {
             this.fanMode = value;
+            this.log('FANMODE 1');
         } else {
-            this.fanMode = this.rotationSpeed;
+            this.fanMode = this.rotationSpeed/2;
+            this.log('FANMODE 0',this.fanMode);
         };
         this.platform.gateway.operateAirPurifier(this.device, {
             fanMode: this.fanMode
+        })
+        .then(() => {
+            if (callback)
+                callback();
+        })
+        .catch((error) => {
+            this.log(error);
+        });
+    }
+
+    setSpeed(value, callback) {
+        this.log('Setting speed to %s%% on air purifier \'%s\'', value, this.name);
+        this.fanSpeed = value/2;
+
+        this.platform.gateway.operateAirPurifier(this.device, {
+            fanSpeed: this.fanSpeed
         })
         .then(() => {
             if (callback)
@@ -155,19 +173,6 @@ module.exports = class AirPurifier extends Device {
         })
         .catch((error) => {
             this.log(error);
-        });
-    }
-
-    setSpeed(value, callback) {
-        this.log('Setting speed to %s%% on air purifier \'%s\'', value, this.name);
-        this.fanSpeed = value/2;
-
-        this.platform.gateway.operateAirPurifier(this.device, {
-            fanSpeed: this.fanSpeed
-        })
-        .then(() => {
-            if (callback)
-                callback();
         });
     }
 
