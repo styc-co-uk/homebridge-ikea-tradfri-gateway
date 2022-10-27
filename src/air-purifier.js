@@ -11,8 +11,8 @@ module.exports = class AirPurifier extends Device {
 
         this.addService('airPurifier', this.airPurifier);
         this.enablePower();
-        this.enableState();
         this.enableSpeed();
+        this.enableState();
         this.enableAirQuality();
         this.enableControlLock();
         this.enableStatus();
@@ -21,8 +21,8 @@ module.exports = class AirPurifier extends Device {
     deviceChanged(device) {
         super.deviceChanged();
         this.updatePower();
-        this.updateState();
         this.updateSpeed();
+        this.updateState();
         this.updateAirQuality();
         this.updateControlLock();
         this.updateStatus();
@@ -52,7 +52,7 @@ module.exports = class AirPurifier extends Device {
             this.setSpeed(value, this.percentSpeed, callback);
         });
         percentSpeed.on('set', (value, callback) => {
-            this.setSpeed(0, value, callback);
+            this.setSpeed(this.autoSpeed, value, callback);
         });
         this.updateSpeed();
     }
@@ -101,30 +101,31 @@ module.exports = class AirPurifier extends Device {
 
     setPower(value, callback) {
         this.log('Setting active to %s on air purifier \'%s\'', value ? 'ACTIVE' : 'INACTIVE', this.name);
-        this.active = value;
-
-        this.platform.gateway.operateAirPurifier(this.device, {
-            fanMode: this.active
-        })
-        .then(() => {
-            if (callback)
-                callback();
-        })
-        .catch((error) => {
-            this.log(error);
-        });
+        if (this.active == value) {
+        } else {
+            this.active = value
+            this.platform.gateway.operateAirPurifier(this.device, {
+                fanMode: this.active
+            })
+            .then(() => {
+                if (callback)
+                    callback();
+            })
+            .catch((error) => {
+                this.log(error);
+            });
+        };
     }
 
     setSpeed(autoSpeed, percentSpeed, callback) {
         this.log('Setting control mode to %s on air purifier \'%s\'', autoSpeed ? 'AUTO' : 'MANUAL', this.name);
         this.log('Setting speed to %s%% on air purifier \'%s\'', percentSpeed, this.name);
         this.fanSpeed = percentSpeed/2 | 0;
-        if (autoSpeed == 1) {
+        if (autoSpeed == 0) {
+            this.fanMode = this.fanSpeed;
+        } else {
             this.fanMode = 1;
             this.autoSpeed = 1;
-        } else {
-            this.fanMode = this.fanSpeed;
-            this.autoSpeed = 0;
         };
         this.log('SET - FANMODE', this.fanMode, 'FANSPEED (0-50)', this.fanSpeed);
         this.platform.gateway.operateAirPurifier(this.device, {
@@ -163,6 +164,22 @@ module.exports = class AirPurifier extends Device {
         active.updateValue(this.active);
     }
 
+    updateSpeed() {
+        var purifier = this.device.airPurifierList[0];
+        var autoSpeed = this.airPurifier.getCharacteristic(this.Characteristic.TargetAirPurifierState);
+        var percentSpeed = this.airPurifier.getCharacteristic(this.Characteristic.RotationSpeed);
+        this.percentSpeed = purifier.fanSpeed*2;
+        this.log('Updating speed to %s%% on air purifier \'%s\'', this.percentSpeed, this.name);
+        percentSpeed.updateValue(this.percentSpeed);
+        if (purifier.fanMode > 1) {
+            this.autoSpeed = 0;
+        } else {
+            this.autoSpeed = 1;
+        };
+        this.log('Updating control mode to %s on air purifier \'%s\'', this.autoSpeed ? 'AUTO' : 'MANUAL', this.name);
+        autoSpeed.updateValue(this.autoSpeed);
+    }
+
     updateState() {
         var purifier = this.device.airPurifierList[0];
         var currentAirPurifierState = this.airPurifier.getCharacteristic(this.Characteristic.CurrentAirPurifierState);
@@ -175,24 +192,6 @@ module.exports = class AirPurifier extends Device {
         this.log('PURIFIER FAN SPEED', purifier.fanSpeed)
         // this.log('Updating fan mode to %s on air purifier \'%s\'', this.fanMode, this.name);
         currentAirPurifierState.updateValue(this.currentAirPurifierState);
-    }
-
-    updateSpeed() {
-        var purifier = this.device.airPurifierList[0];
-        var autoSpeed = this.airPurifier.getCharacteristic(this.Characteristic.TargetAirPurifierState);
-        var percentSpeed = this.airPurifier.getCharacteristic(this.Characteristic.RotationSpeed);
-        this.percentSpeed = purifier.fanSpeed*2;
-        this.log('Updating speed to %s%% on air purifier \'%s\'', this.percentSpeed, this.name);
-        percentSpeed.updateValue(this.percentSpeed);
-        if (purifier.fanMode != 0) {
-            if (purifier.fanMode == 1) {
-                this.autoSpeed = 1;
-            } else {
-                this.autoSpeed = 0;
-            };
-            this.log('Updating control mode to %s on air purifier \'%s\'', autoSpeed ? 'AUTO' : 'MANUAL', this.name);
-            autoSpeed.updateValue(this.autoSpeed);
-        };
     }
 
     updateAirQuality() {
