@@ -8,8 +8,10 @@ module.exports = class AirPurifier extends Device {
 
         this.log('Creating new air purifier %s (%s)...', this.name, this.id);
         this.airPurifier = new this.Service.AirPurifier(this.name, this.uuid);
+        this.airQualitySensor = new this.Service.AirQualitySensor(this.name, this.uuid);
 
         this.addService('airPurifier', this.airPurifier);
+        this.addService('airQualitySensor', this.airQualitySensor);
         this.enablePower();
         this.enableSpeed();
         this.enableState();
@@ -187,19 +189,17 @@ module.exports = class AirPurifier extends Device {
             this.currentAirPurifierState = 2;
         } else {
             this.currentAirPurifierState = 0;
-        } 
-        this.log('PURIFIER FAN MODE', purifier.fanMode)
-        this.log('PURIFIER FAN SPEED', purifier.fanSpeed)
-        // this.log('Updating fan mode to %s on air purifier \'%s\'', this.fanMode, this.name);
+        }
+        this.log('Updating state to %s on air purifier \'%s\'', this.currentAirPurifierState/2 ? 'PURIFYING_AIR' : 'INACTIVE', this.name);
         currentAirPurifierState.updateValue(this.currentAirPurifierState);
     }
 
     updateAirQuality() {
         var purifier = this.device.airPurifierList[0];
         var airQuality = this.airPurifier.getCharacteristic(this.Characteristic.AirQuality);
-        var airQualityDesc = 'UNKNOWN';
         var pm2_5Density = this.airPurifier.getCharacteristic(this.Characteristic.PM2_5Density);
         this.pm2_5Density = purifier.airQuality;
+        var airQualityDesc = 'UNKNOWN';
         if (purifier.airQuality > 0 && purifier.airQuality <= 15) {
             this.airQuality = 1;
             this.airQualityDesc = 'EXCELLENT';
@@ -221,6 +221,14 @@ module.exports = class AirPurifier extends Device {
         };
         this.log('Updating PM2.5 density to %s ppm on air purifier \'%s\'', this.pm2_5Density, this.name);
         this.log('Updating air quality to %s on air purifier \'%s\'', this.airQualityDesc, this.name);
+        airQuality.updateValue(this.airQuality);
+        pm2_5Density.updateValue(this.pm2_5Density);
+        this.updateAirQualitySensor();
+    }
+
+    updateAirQualitySensor() {
+        var airQuality = this.airQualitySensor.getCharacteristic(this.Characteristic.AirQuality);
+        var pm2_5Density = this.airQualitySensor.getCharacteristic(this.Characteristic.PM2_5Density);
         airQuality.updateValue(this.airQuality);
         pm2_5Density.updateValue(this.pm2_5Density);
     }
