@@ -9,6 +9,9 @@ module.exports = class WarmWhiteLightbulb extends GeneralBulb {
     constructor(platform, device) {
         super(platform, device);
 
+        this.duplicatedCall = false;
+        this.darker = false;
+
         this.enableColorTemperature();
     }
 
@@ -52,22 +55,54 @@ module.exports = class WarmWhiteLightbulb extends GeneralBulb {
     }
 
     setColorTemperature(colorTemperature, brightness, callback) {
+        if (brightness < this.brightness) {
+            this.darker = true;
+        }
         this.brightness = brightness;
-
-        // Make sure it is between MIN and MAX
         colorTemperature = Math.max(Math.min(colorTemperature, COLOR_MAX), COLOR_MIN);
         this.colorTemperature = colorTemperature;
-        let percent = parseInt(100 * (this.colorTemperature - COLOR_MIN) / (COLOR_MAX - COLOR_MIN));
+        if (this.duplicatedCall) {
+            callback();
+        } else {
+            this.duplicatedCall = true;
+            setTimeout(() => {
+                this.passColorTemperature(this.colorTemperature, this.brightness, callback);
+            }, 100)
+        }
+    }
+
+    passColorTemperature(colorTemperature, brightness, callback) {
+        // this.brightness = brightness;
+
+        // Make sure it is between MIN and MAX
+        // colorTemperature = Math.max(Math.min(colorTemperature, COLOR_MAX), COLOR_MIN);
+        // this.colorTemperature = colorTemperature;
+        let percent = parseInt(100 * (colorTemperature - COLOR_MIN) / (COLOR_MAX - COLOR_MIN));
 
         this.log('Setting brightness to %s%% and color temperature to %s%% on lightbulb \'%s\'', brightness, percent, this.name);
-
-        this.platform.gateway.operateLight(this.device, {
-            dimmer: this.brightness,
-            colorTemperature: percent
-        })
-        .then(() => {
-            if (callback)
-                callback();
-        });
+        this.log.debug(percent, brightness);
+        if (this.darker) {
+            this.platform.gateway.operateLight(this.device, {
+                'dimmer': brightness, 'transitionTime': 0.5
+            }).then(() => {setTimeout(() => this.platform.gateway.operateLight(this.device, {
+                "colorTemperature":percent, 'transitionTime': 0
+            }),550)})
+            .then(() => {
+                if (callback)
+                    callback();
+            });
+        } else {
+            this.platform.gateway.operateLight(this.device, {
+                "colorTemperature":percent, 'transitionTime': 0
+            }).then(() => this.platform.gateway.operateLight(this.device, {
+                'dimmer': brightness
+            }))
+            .then(() => {
+                if (callback)
+                    callback();
+            });
+        }
+        this.duplicatedCall = false;
+        this.darker = false;
     }
 };
