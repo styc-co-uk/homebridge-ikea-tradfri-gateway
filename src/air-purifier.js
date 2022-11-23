@@ -12,6 +12,7 @@ module.exports = class AirPurifier extends Device {
 
         this.addService('airPurifier', this.airPurifier);
         this.addService('airQualitySensor', this.airQualitySensor);
+
         this.enablePower();
         this.enableSpeed();
         this.enableAirQuality();
@@ -22,6 +23,7 @@ module.exports = class AirPurifier extends Device {
 
     deviceChanged(device) {
         super.deviceChanged();
+
         this.updatePower();
         this.updateSpeed();
         this.updateAirQuality();
@@ -108,6 +110,8 @@ module.exports = class AirPurifier extends Device {
     setPower(value, callback) {
         this.log('Setting active to %s on air purifier \'%s\'.', value ? 'ACTIVE' : 'INACTIVE', this.name);
         if (this.active == value) {
+            if (callback)
+                callback();
         } else {
             this.active = value;
             this.platform.gateway.operateAirPurifier(this.device, {
