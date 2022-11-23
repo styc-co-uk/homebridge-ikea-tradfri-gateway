@@ -9,6 +9,9 @@ module.exports = class WarmWhiteLightbulb extends GeneralBulb {
     constructor(platform, device) {
         super(platform, device);
 
+        this.colorTemperature = (COLOR_MAX + COLOR_MIN) / 2;
+        this.brightness = 100;
+
         this.enableColorTemperature();
     }
 
@@ -18,8 +21,8 @@ module.exports = class WarmWhiteLightbulb extends GeneralBulb {
     }
 
     enableColorTemperature() {
+        let colorTemperature = this.lightbulb.getCharacteristic(this.Characteristic.ColorTemperature);
         let brightness = this.lightbulb.addCharacteristic(this.Characteristic.Brightness);
-        let colorTemperature = this.lightbulb.addCharacteristic(this.Characteristic.ColorTemperature);
 
         colorTemperature.on('get', (callback) => {
             callback(null, this.colorTemperature);
@@ -40,23 +43,27 @@ module.exports = class WarmWhiteLightbulb extends GeneralBulb {
 
     updateColorTemperature() {
         let light = this.device.lightList[0];
-        let brightness = this.lightbulb.getCharacteristic(this.Characteristic.Brightness);
         let colorTemperature = this.lightbulb.getCharacteristic(this.Characteristic.ColorTemperature);
+        let brightness = this.lightbulb.getCharacteristic(this.Characteristic.Brightness);
 
-        this.brightness = light.dimmer;
         this.colorTemperature = COLOR_MIN + ((COLOR_MAX - COLOR_MIN) * (light.colorTemperature / 100));
+        this.brightness = light.dimmer;
 
         this.log('Updating brightness to %s%% and color temperature to %s%% on lightbulb \'%s\'', this.brightness, light.colorTemperature, this.name);
-        brightness.updateValue(this.brightness);
         colorTemperature.updateValue(this.colorTemperature);
+        brightness.updateValue(this.brightness);
     }
 
     setColorTemperature(colorTemperature, brightness, callback) {
-        this.brightness = brightness;
 
         // Make sure it is between MIN and MAX
-        colorTemperature = Math.max(Math.min(colorTemperature, COLOR_MAX), COLOR_MIN);
+        value = Math.max(Math.min(value, COLOR_MAX), COLOR_MIN);
+
+        // Set value
         this.colorTemperature = colorTemperature;
+        this.brightness = brightness;
+
+        // Compute color temperature in percent (0-100)
         let percent = parseInt(100 * (this.colorTemperature - COLOR_MIN) / (COLOR_MAX - COLOR_MIN));
 
         this.log('Setting brightness to %s%% and color temperature to %s%% on lightbulb \'%s\'', brightness, percent, this.name);
@@ -70,4 +77,6 @@ module.exports = class WarmWhiteLightbulb extends GeneralBulb {
                 callback();
         });
     }
+
+
 };

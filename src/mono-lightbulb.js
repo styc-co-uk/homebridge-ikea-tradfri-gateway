@@ -6,6 +6,8 @@ module.exports = class MonoLightbulb extends GeneralBulb {
     constructor(platform, device) {
         super(platform, device);
 
+        this.brightness = 100;
+
         this.enableBrightness();
     }
 
@@ -49,5 +51,7 @@ module.exports = class MonoLightbulb extends GeneralBulb {
 
         this.log('Updating brightness to %s%% on lightbulb \'%s\'', this.brightness, this.name);
         brightness.updateValue(this.brightness);
+
     }
+
 };
