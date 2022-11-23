@@ -2,7 +2,7 @@
 
 var isArray          = require('yow/isArray');
 
-var MonoLightbulb      = require('./mono-lightbulb.js');
+var Lightbulb          = require('./lightbulb.js');
 var WarmWhiteLightbulb = require('./warm-white-lightbulb.js');
 var RgbLightbulb       = require('./rgb-lightbulb.js');
 var Outlet             = require('./outlet.js');
@@ -102,7 +102,7 @@ module.exports = class Platform extends Gateway {
                                 break;
                             }
                             default: {
-                                supportedDevice = new MonoLightbulb(this, device);
+                                supportedDevice = new Lightbulb(this, device);
                                 break;
                             }
                         }

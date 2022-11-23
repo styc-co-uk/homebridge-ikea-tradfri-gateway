@@ -1,16 +1,15 @@
 "use strict";
-var GeneralBulb = require('./generalbulb.js');
+var Lightbulb   = require('./lightbulb.js');
 
 const COLOR_MIN = 140;
 const COLOR_MAX = 500;
 
-module.exports = class WarmWhiteLightbulb extends GeneralBulb {
+module.exports = class WarmWhiteLightbulb extends Lightbulb {
 
     constructor(platform, device) {
         super(platform, device);
 
         this.colorTemperature = (COLOR_MAX + COLOR_MIN) / 2;
-        this.brightness = 100;
 
         this.enableColorTemperature();
     }
@@ -21,61 +20,51 @@ module.exports = class WarmWhiteLightbulb extends GeneralBulb {
     }
 
     enableColorTemperature() {
-        let colorTemperature = this.lightbulb.getCharacteristic(this.Characteristic.ColorTemperature);
-        let brightness = this.lightbulb.addCharacteristic(this.Characteristic.Brightness);
+        var colorTemperature = this.lightbulb.getCharacteristic(this.Characteristic.ColorTemperature);
 
         colorTemperature.on('get', (callback) => {
             callback(null, this.colorTemperature);
         });
-        colorTemperature.on('set', (value, callback) => {
-            this.setColorTemperature(value, this.brightness, callback);
-        });
 
-        brightness.on('get', (callback) => {
-            callback(null, this.brightness);
-        });
-        brightness.on('set', (value, callback) => {
-            this.setColorTemperature(this.colorTemperature, value, callback);
+        colorTemperature.on('set', (value, callback) => {
+            this.setColorTemperature(value, callback);
         });
 
         this.updateColorTemperature();
     }
 
     updateColorTemperature() {
-        let light = this.device.lightList[0];
-        let colorTemperature = this.lightbulb.getCharacteristic(this.Characteristic.ColorTemperature);
-        let brightness = this.lightbulb.getCharacteristic(this.Characteristic.Brightness);
+        var light = this.device.lightList[0];
+        var colorTemperature = this.lightbulb.getCharacteristic(this.Characteristic.ColorTemperature);
 
         this.colorTemperature = COLOR_MIN + ((COLOR_MAX - COLOR_MIN) * (light.colorTemperature / 100));
-        this.brightness = light.dimmer;
 
-        this.log('Updating brightness to %s%% and color temperature to %s%% on lightbulb \'%s\'', this.brightness, light.colorTemperature, this.name);
+        this.log('Updating color temperature to %s on lightbulb \'%s\'', this.colorTemperature, this.name);
         colorTemperature.updateValue(this.colorTemperature);
-        brightness.updateValue(this.brightness);
     }
 
-    setColorTemperature(colorTemperature, brightness, callback) {
+    setColorTemperature(value, callback) {
 
         // Make sure it is between MIN and MAX
         value = Math.max(Math.min(value, COLOR_MAX), COLOR_MIN);
 
         // Set value
-        this.colorTemperature = colorTemperature;
-        this.brightness = brightness;
+        this.colorTemperature = value;
 
         // Compute color temperature in percent (0-100)
-        let percent = parseInt(100 * (this.colorTemperature - COLOR_MIN) / (COLOR_MAX - COLOR_MIN));
+        var percent = parseInt(100 * (this.colorTemperature - COLOR_MIN) / (COLOR_MAX - COLOR_MIN));
 
-        this.log('Setting brightness to %s%% and color temperature to %s%% on lightbulb \'%s\'', brightness, percent, this.name);
+        this.log('Setting color temperature to %s%% on lightbulb \'%s\'', percent, this.name);
 
-        this.platform.gateway.operateLight(this.device, {
-            dimmer: this.brightness,
-            colorTemperature: percent
-        })
-        .then(() => {
-            if (callback)
-                callback();
-        });
+        setTimeout(() => {
+                this.platform.gateway.operateLight(this.device, {
+                    colorTemperature: percent
+                })
+                .then(() => {
+                    if (callback)
+                        callback();
+                })
+        }, 1000)
     }
 
 
