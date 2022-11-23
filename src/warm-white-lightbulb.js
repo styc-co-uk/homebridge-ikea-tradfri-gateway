@@ -56,15 +56,13 @@ module.exports = class WarmWhiteLightbulb extends Lightbulb {
 
         this.log('Setting color temperature to %s%% on lightbulb \'%s\'', percent, this.name);
 
-        setTimeout(() => {
-                this.platform.gateway.operateLight(this.device, {
-                    colorTemperature: percent
-                })
-                .then(() => {
-                    if (callback)
-                        callback();
-                })
-        }, 1000)
+        this.platform.gateway.operateLight(this.device, {
+            colorTemperature: percent, transitionTime: 0;
+        })
+        .then(() => {
+            if (callback)
+                callback();
+        })
     }
 
 

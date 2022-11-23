@@ -87,7 +87,7 @@ module.exports = class Lightbulb extends Device {
         this.brightness = value;
 
         this.platform.gateway.operateLight(this.device, {
-            dimmer: this.brightness
+            dimmer: this.brightness, transitionTime: 0;
         })
         .then(() => {
             if (callback)
