@@ -10,7 +10,6 @@ module.exports = class WarmWhiteLightbulb extends GeneralBulb {
         super(platform, device);
 
         this.duplicatedCall = false;
-        this.oldBrightness = 0;
 
         this.enableColorTemperature();
     }
@@ -65,33 +64,22 @@ module.exports = class WarmWhiteLightbulb extends GeneralBulb {
         } else {
             this.duplicatedCall = true;
             setTimeout(() => {
-                this.passColorTemperature(this.colorTemperature, this.brightness, this.oldBrightness, callback);
+                this.passColorTemperature(this.colorTemperature, this.brightness, callback);
             }, 500)
         }
     }
 
-    passColorTemperature(colorTemperature, brightness, oldBrightness, callback) {
+    passColorTemperature(colorTemperature, brightness, callback) {
         let percent = parseInt(100 * (colorTemperature - COLOR_MIN) / (COLOR_MAX - COLOR_MIN));
 
         this.log('Setting brightness to %s%% and color temperature to %s%% on lightbulb \'%s\'', brightness, percent, this.name);
-        let midBrightness = 0.5*(brightness+oldBrightness);
-        this.log.debug(percent, brightness, midBrightness, oldBrightness);
         this.platform.gateway.operateLight(this.device, {
-                'dimmer': midBrightness, 'transitionTime': 0.2
-            }).then(() => {setTimeout(() => {
-                this.platform.gateway.operateLight(this.device, {
-                    "colorTemperature":percent, 'transitionTime': 0
-                }).then(() => {setTimeout(() => {
-                    this.platform.gateway.operateLight(this.device, {
-                        "dimmer":brightness, 'transitionTime': 0.7
-                    })
-                }, 10)})
-            }, 210)})
+                'dimmer': brightness, 'colorTemperature':percent, 'transitionTime': 0
+            })
             .then(() => {
                 if (callback)
                     callback();
             });
         this.duplicatedCall = false;
-        this.oldBrightness = brightness;
     }
 };
